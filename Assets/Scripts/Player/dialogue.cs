@@ -29,6 +29,16 @@ public class dialogue : MonoBehaviour
     [SerializeField]
     private Sprite[] portrait;
 
+    public DialogueChoice[] choices;
+    public string nextDialogueID;
+
+    [System.Serializable]
+    public class DialogueChoice
+    {
+        public string choiceText;
+        public string nextDialogueID;
+    }
+
     private bool dialogueActivated;
     private int step;
 

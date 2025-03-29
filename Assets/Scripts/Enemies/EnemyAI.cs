@@ -111,63 +111,53 @@ public class EnemyAI : MonoBehaviour
         // Step 2: Position `SpawnAttack` at the offset in saved direction
         float offsetDistance = 1.5f;
         spawnAttack.position = transform.position + (Vector3)savedDirection * offsetDistance;
-
-        // Step 3: Ensure `spawnAttack` stays with the enemy during knockback
         spawnAttack.SetParent(transform, true);
 
-        // **FIX: Ensure we are NOT creating a new warning UI, just using the existing one**
+        // Step 3: Show warning UI properly
         if (warningUIInstance != null)
         {
             warningUIInstance.transform.SetParent(spawnAttack, false);
             warningUIInstance.transform.position = spawnAttack.position;
 
-            // Set Rotation to Face Attack Direction
             float angle = Mathf.Atan2(savedDirection.y, savedDirection.x) * Mathf.Rad2Deg;
             warningUIInstance.transform.rotation = Quaternion.Euler(0, 0, angle);
 
             warningUIInstance.SetActive(true);
         }
-        else
-        {
-            Debug.LogError("Warning UI is missing! Make sure it is assigned in the inspector.");
-        }
 
         // Step 4: Wind-up Delay
         yield return new WaitForSeconds(windUpTime);
 
-        // Step 5: Hide Warning UI and Start Attack
+        // Step 5: Hide Warning UI and Start Dash
         if (warningUIInstance != null)
-        {
             warningUIInstance.SetActive(false);
-        }
 
         damageCollider.SetActive(true);
         trailSpawn.SetActive(true);
 
         float dashTime = 0f;
-        Vector2 stopPosition = (Vector2)transform.position + savedDirection * 1.5f; // Hardcoded stop distance
+        Vector2 stopPosition = (Vector2)transform.position + savedDirection * 1.5f;
 
+        // **Use MovePosition instead of linearVelocity to smoothly move**
         while (dashTime < dashDuration)
         {
-            rb.linearVelocity = savedDirection * dashSpeed;
+            Vector2 newPosition = Vector2.Lerp(transform.position, stopPosition, dashTime / dashDuration);
+            rb.MovePosition(newPosition);
+
             dashTime += Time.deltaTime;
-
-            if (Vector2.Distance(transform.position, stopPosition) <= 0.1f) // Stop when close enough
-                break;
-
             yield return null;
         }
 
-        // Ensure final position is exactly at the stop position
+        // Step 6: Stop movement naturally (instead of teleporting)
         rb.linearVelocity = Vector2.zero;
-        rb.position = stopPosition;
 
         trailSpawn.SetActive(false);
         damageCollider.SetActive(false);
 
-        yield return new WaitForSeconds(attackCooldown); // Cooldown before another attack
+        yield return new WaitForSeconds(attackCooldown);
         isAttacking = false;
     }
+
 
 
 
